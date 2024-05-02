@@ -54,7 +54,6 @@ public class MultiCrafter extends GenericCrafter {
         solid = true;
         hasItems = true;
         ambientSound = Sounds.machine;
-        sync = true;
         ambientSoundVolume = 0.03f;
         logicConfigurable = true;
         flags = EnumSet.of(BlockFlag.factory);
@@ -380,12 +379,6 @@ public class MultiCrafter extends GenericCrafter {
                     dumpLiquid(currentPlan.outputLiquids[i].liquid, 2f, dir);
                 }
             }
-        }
-
-
-        public void setPlan(CraftPlan plan) {
-            progress = 0f;
-            currentPlan = plan;
         }
 
         @Override
