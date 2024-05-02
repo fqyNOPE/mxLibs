@@ -1,5 +1,7 @@
 package mxLibs;
 
+import arc.Events;
+import mindustry.game.EventType;
 import mindustry.gen.EntityMapping;
 import mindustry.mod.ClassMap;
 import mindustry.mod.Mod;
@@ -21,9 +23,9 @@ public class mxLibs extends Mod {
     public mxLibs() {
         entityIds = new int[16];
         entityIds[0] = EntityMapping.register("AircraftUnitEntity", AircraftUnitEntity::new);
-//        Events.on(ContentInitEvent.class,(c)-> {
-//            ResearchObjectives.load();
-//        });
+        Events.on(EventType.ContentInitEvent.class, (c) -> {
+            ResearchObjectives.load();
+        });
     }
 
     @Override
@@ -40,6 +42,7 @@ public class mxLibs extends Mod {
         }
         //TestUnits.load();
         //TestBlocks.load();
+
 
     }
 

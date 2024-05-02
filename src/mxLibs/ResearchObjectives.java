@@ -2,9 +2,12 @@ package mxLibs;
 
 import arc.Events;
 import arc.struct.ObjectMap;
+import arc.struct.Seq;
 import arc.util.serialization.JsonValue;
 import mindustry.ctype.UnlockableContent;
 import mindustry.game.EventType;
+
+import java.util.Comparator;
 
 import static mindustry.Vars.content;
 import static mindustry.Vars.state;
@@ -13,26 +16,27 @@ public class ResearchObjectives {
 
     public static class ResearchPlan {
         public int tier;
+        public UnlockableContent content;
         public UnlockableContent target;
-
         public JsonValue value;
 
-        public ResearchPlan(int tier, UnlockableContent target, JsonValue value) {
+        public ResearchPlan(int tier, UnlockableContent content, UnlockableContent target, JsonValue value) {
             this.tier = tier;
+            this.content = content;
             this.target = target;
             this.value = value;
         }
     }
 
 
-    public static ObjectMap<UnlockableContent, ResearchPlan> objectives = new ObjectMap<>();
+    public static Seq<ResearchPlan> objectives = new Seq<>();
     public static ObjectMap<UnlockableContent, JsonValue> toBeParsed = new ObjectMap<>();
-
+    public static int[] tiers;
     public static ObjectMap<UnlockableContent, JsonValue> defaultValue = new ObjectMap<>();
 
     public static void load() {
+        tiers = new int[content.blocks().size];
         for (var value : toBeParsed) {
-
             for (var child : value.value) {
                 UnlockableContent c = null;
                 int tier = 0;
@@ -49,24 +53,35 @@ public class ResearchObjectives {
                 if (child.has("objectives") && child.get("objectives").isObject()) {
                     v = child.get("objectives");
                 }
-                if (c != null && v != null) objectives.put(c, new ResearchPlan(tier, value.key, v));
+                if (c != null && v != null) objectives.addUnique(new ResearchPlan(tier, c, value.key, v));
             }
         }
-
+        objectives.sort(Comparator.comparingInt(a -> a.tier));
         Events.on(EventType.WorldLoadEndEvent.class, (c) -> {
-            objectives.each((content, plan) -> {
-                if (content.unlocked() || !state.isCampaign()) {
-                    replaceBlock(plan.target, plan.value);
-                }
+            defaultValue.each((content, value) -> {
+                replaceBlock(content, value);
             });
+            int[] t = new int[content.blocks().size];
+            for (var plan : objectives) {
+                if (plan.content.unlocked() || !state.isCampaign()) {
+                    if (t[plan.content.id] < plan.tier) {
+                        t[plan.content.id] = plan.tier;
+                        replaceBlock(plan.target, plan.value);
+                    }
+                }
+            }
+            tiers = t;
         });
 
         Events.on(EventType.ResearchEvent.class, (c) -> {
-            objectives.each((content, plan) -> {
-                if (content == c.content) {
-                    replaceBlock(plan.target, plan.value);
+            for (var plan : objectives) {
+                if (plan.content == c.content) {
+                    if (tiers[plan.content.id] < plan.tier) {
+                        tiers[plan.content.id] = plan.tier;
+                        replaceBlock(plan.target, plan.value);
+                    }
                 }
-            });
+            }
         });
     }
 
